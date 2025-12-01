@@ -548,6 +548,14 @@
       "description": "Enable an RSS feed for this list",
       "feed_url": "RSS Feed URL"
     },
+    "export": {
+      "title": "Export List",
+      "description": "Download all bookmarks in this list as a CSV file",
+      "download_csv": "Download CSV",
+      "exporting": "Exporting...",
+      "success": "List exported successfully",
+      "error": "Failed to export list"
+    },
     "public_list": {
       "title": "Public List",
       "description": "Allow others to view this list",

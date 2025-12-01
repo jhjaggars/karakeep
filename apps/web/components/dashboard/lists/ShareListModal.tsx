@@ -16,6 +16,7 @@ import { ZBookmarkList } from "@karakeep/shared/types/lists";
 
 import PublicListLink from "./PublicListLink";
 import RssLink from "./RssLink";
+import ExportListLink from "./ExportListLink";
 
 export function ShareListModal({
   open: userOpen,
@@ -56,6 +57,7 @@ export function ShareListModal({
         <DialogDescription className="mt-4 space-y-6">
           <PublicListLink list={list} />
           <RssLink listId={list.id} />
+          <ExportListLink list={list} />
         </DialogDescription>
         <DialogFooter className="sm:justify-end">
           <DialogClose asChild>
