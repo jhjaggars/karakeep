@@ -1,12 +1,13 @@
 import { NextRequest } from "next/server";
 import { api, createContextFromRequest } from "@/server/api/client";
-import { List } from "@karakeep/trpc/models/lists";
-import { Bookmark } from "@karakeep/trpc/models/bookmarks";
-import type { ZBookmark } from "@karakeep/shared/types/bookmarks";
 
+import type { ZBookmark } from "@karakeep/shared/types/bookmarks";
+import { MAX_NUM_BOOKMARKS_PER_PAGE } from "@karakeep/shared/types/bookmarks";
+
+export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-function escapeCSVField(field: any): string {
+function escapeCSVField(field: unknown): string {
   if (field === null || field === undefined) return "";
   const str = String(field);
   if (str.includes(",") || str.includes('"') || str.includes("\n")) {
@@ -94,7 +95,7 @@ function generateCSV(bookmarks: ZBookmark[]): string {
   });
 
   const csvRows = [headers, ...rows].map((row) =>
-    row.map(escapeCSVField).join(",")
+    row.map(escapeCSVField).join(","),
   );
 
   return csvRows.join("\n");
@@ -102,7 +103,7 @@ function generateCSV(bookmarks: ZBookmark[]): string {
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { listId: string } }
+  { params }: { params: { listId: string } },
 ) {
   const ctx = await createContextFromRequest(request);
   if (!ctx.user) {
@@ -110,31 +111,27 @@ export async function GET(
   }
 
   try {
-    // Load list (this validates permissions automatically)
-    const list = await List.fromId(ctx, params.listId);
+    // Get list details using tRPC
+    const list = await api.lists.get({ listId: params.listId });
 
-    // Get all bookmark IDs in the list
-    const bookmarkIds = await list.getBookmarkIds();
-
-    // If list is empty, return CSV with headers only
-    if (bookmarkIds.length === 0) {
-      const csv = generateCSV([]);
-      const sanitizedName = list.name.replace(/[/\\:*?"<>|]/g, "-");
-      return new Response(csv, {
-        status: 200,
-        headers: {
-          "Content-Type": "text/csv",
-          "Content-Disposition": `attachment; filename="list-${sanitizedName}-${new Date().toISOString()}.csv"`,
-        },
-      });
-    }
-
-    // Load all bookmarks with full content
-    const { bookmarks } = await Bookmark.loadMulti(ctx, {
-      ids: bookmarkIds,
+    // Get all bookmarks in the list using pagination
+    const req = {
+      listId: params.listId,
+      limit: MAX_NUM_BOOKMARKS_PER_PAGE,
+      useCursorV2: true,
       includeContent: true,
-      limit: bookmarkIds.length,
-    });
+    };
+
+    let resp = await api.bookmarks.getBookmarks(req);
+    let bookmarks = resp.bookmarks;
+
+    while (resp.nextCursor) {
+      resp = await api.bookmarks.getBookmarks({
+        ...req,
+        cursor: resp.nextCursor,
+      });
+      bookmarks = [...bookmarks, ...resp.bookmarks];
+    }
 
     // Generate CSV
     const csv = generateCSV(bookmarks);
@@ -150,9 +147,6 @@ export async function GET(
     });
   } catch (error) {
     console.error("Error exporting list:", error);
-    return Response.json(
-      { error: "Failed to export list" },
-      { status: 500 }
-    );
+    return Response.json({ error: "Failed to export list" }, { status: 500 });
   }
 }

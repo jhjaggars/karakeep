@@ -3,9 +3,9 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Loader2, Download } from "lucide-react";
+import { toast } from "@/components/ui/use-toast";
 import { useTranslation } from "@/lib/i18n/client";
-import { toast } from "sonner";
+import { Download, Loader2 } from "lucide-react";
 
 import { ZBookmarkList } from "@karakeep/shared/types/lists";
 
@@ -29,10 +29,15 @@ export default function ExportListLink({ list }: { list: ZBookmarkList }) {
       a.click();
       window.URL.revokeObjectURL(url);
 
-      toast.success(t("lists.export.success"));
+      toast({
+        description: t("lists.export.success"),
+      });
     } catch (error) {
       console.error("Export error:", error);
-      toast.error(t("lists.export.error"));
+      toast({
+        variant: "destructive",
+        description: t("lists.export.error"),
+      });
     } finally {
       setIsExporting(false);
     }
@@ -41,9 +46,7 @@ export default function ExportListLink({ list }: { list: ZBookmarkList }) {
   return (
     <div className="space-y-3">
       <div className="space-y-1">
-        <Label className="text-sm font-medium">
-          {t("lists.export.title")}
-        </Label>
+        <Label className="text-sm font-medium">{t("lists.export.title")}</Label>
         <p className="text-xs text-muted-foreground">
           {t("lists.export.description")}
         </p>

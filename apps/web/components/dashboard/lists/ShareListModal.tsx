@@ -14,9 +14,9 @@ import { useTranslation } from "@/lib/i18n/client";
 
 import { ZBookmarkList } from "@karakeep/shared/types/lists";
 
+import ExportListLink from "./ExportListLink";
 import PublicListLink from "./PublicListLink";
 import RssLink from "./RssLink";
-import ExportListLink from "./ExportListLink";
 
 export function ShareListModal({
   open: userOpen,
